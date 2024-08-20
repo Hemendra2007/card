@@ -34,6 +34,7 @@ level = 1
 # New feature constants
 FOOD_COLORS = [RED, BLUE, YELLOW, WHITE, GREEN]
 current_food_color = random.choice(FOOD_COLORS)
+obstacle_color = BLUE
 
 def game_over():
     global high_score
@@ -53,8 +54,27 @@ def pause_game():
     global paused
     paused = not paused
 
+def start_screen():
+    WINDOW.fill(BLACK)
+    font = pygame.font.SysFont(None, 55)
+    title_text = font.render('Snake Game', True, GREEN)
+    prompt_text = font.render('Press any key to start', True, WHITE)
+    WINDOW.blit(title_text, (WIDTH // 4, HEIGHT // 3))
+    WINDOW.blit(prompt_text, (WIDTH // 6, HEIGHT // 2))
+    pygame.display.flip()
+    waiting = True
+    while waiting:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                sys.exit()
+            if event.type == pygame.KEYDOWN:
+                waiting = False
+
 def main():
-    global direction, change_to, snake_pos, snake_body, food_pos, score, obstacles, paused, snake_speed, level, current_food_color
+    global direction, change_to, snake_pos, snake_body, food_pos, score, obstacles, paused, snake_speed, level, current_food_color, obstacle_color
+
+    start_screen()  # Show start screen before starting the game
 
     clock = pygame.time.Clock()
     
@@ -94,9 +114,16 @@ def main():
         elif direction == 'RIGHT':
             snake_pos[0] += snake_speed
 
-        if snake_pos[0] < 0 or snake_pos[0] >= WIDTH or snake_pos[1] < 0 or snake_pos[1] >= HEIGHT:
-            game_over()
-        
+        # Implement boundary wrapping
+        if snake_pos[0] < 0:
+            snake_pos[0] = WIDTH - SNAKE_SIZE
+        elif snake_pos[0] >= WIDTH:
+            snake_pos[0] = 0
+        if snake_pos[1] < 0:
+            snake_pos[1] = HEIGHT - SNAKE_SIZE
+        elif snake_pos[1] >= HEIGHT:
+            snake_pos[1] = 0
+
         snake_body.insert(0, list(snake_pos))
         if snake_pos == food_pos:
             score += 1
@@ -104,6 +131,7 @@ def main():
             if score % 5 == 0:  # Increase level every 5 points
                 level += 1
                 snake_speed *= speed_increment
+                obstacle_color = random.choice(FOOD_COLORS)  # Change obstacle color with level
             food_pos = [random.randrange(1, (WIDTH // SNAKE_SIZE)) * SNAKE_SIZE,
                         random.randrange(1, (HEIGHT // SNAKE_SIZE)) * SNAKE_SIZE]
             obstacles.append([random.randrange(1, (WIDTH // SNAKE_SIZE)) * SNAKE_SIZE,
@@ -126,7 +154,7 @@ def main():
             pygame.draw.rect(WINDOW, GREEN, pygame.Rect(segment[0], segment[1], SNAKE_SIZE, SNAKE_SIZE))
         pygame.draw.rect(WINDOW, current_food_color, pygame.Rect(food_pos[0], food_pos[1], SNAKE_SIZE, SNAKE_SIZE))
         for obs in obstacles:
-            pygame.draw.rect(WINDOW, BLUE, pygame.Rect(obs[0], obs[1], SNAKE_SIZE, SNAKE_SIZE))
+            pygame.draw.rect(WINDOW, obstacle_color, pygame.Rect(obs[0], obs[1], SNAKE_SIZE, SNAKE_SIZE))
         
         font = pygame.font.SysFont(None, 36)
         score_text = font.render(f'Score: {score}', True, WHITE)
